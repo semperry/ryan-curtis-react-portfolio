@@ -1,89 +1,72 @@
-import React, { Component } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 
-export default class Login extends Component {
-  constructor(props) {
-    super(props);
+export default function Login(props) {
+	const [email, setEmail] = useState("")
+	const [password, setPassword] = useState("")
+	const [errorText, setErrorText] = useState("")
 
-    this.state = {
-      email: "",
-      password: "",
-      errorText: ""
-    };
-  }
+	const handleSubmit = event => {
+		event.preventDefault();
 
-  handleChange = event => {
-    this.setState({
-      [event.target.name]: event.target.value,
-      errorText: ""
-    });
-  };
+		axios
+			.post(
+				"https://api.devcamp.space/sessions",
+				{
+					client: {
+						email,
+						password
+					}
+				},
+				{ withCredentials: true }
+			)
+			.then(response => {
+				if (response.data.status === "created") {
+					props.handleSuccessfulAuth();
+				} else {
+					setErrorText("Wrong email or password")
+					props.handleUnuccessfulAuth();
+				}
+			})
+			.catch(error => {
+				setErrorText("An Error Occured")
+				props.handleUnuccessfulAuth();
+			});
+	};
 
-  handleSubmit = event => {
-    axios
-      .post(
-        "https://api.devcamp.space/sessions",
-        {
-          client: {
-            email: this.state.email,
-            password: this.state.password
-          }
-        },
-        { withCredentials: true }
-      )
-      .then(response => {
-        if (response.data.status === "created") {
-          this.props.handleSuccessfulAuth();
-        } else {
-          this.setState({
-            errorText: "Wrong email or password"
-          });
-          this.props.handleUnsuccessfulAuth();
-        }
-      })
-      .catch(error => {
-        this.setState({
-          errorText: "An Error Occured"
-        });
-        this.props.handleUnsuccessfulAuth();
-      });
+	return (
+		<div>
+			<h1>LOGIN TO ACCESS YOUR DASHBOARD</h1>
 
-    event.preventDefault();
-  };
+			<div>{errorText}</div>
 
-  render() {
-    return (
-      <div>
-        <h1>LOGIN TO ACCESS YOUR DASHBOARD</h1>
+			<form onSubmit={handleSubmit} className="auth-form-wrapper">
+				<div className="form-group">
+					<FontAwesomeIcon icon="envelope" />
+					<input
+						type="email"
+						placeholder="Your email"
+						value={email}
+						onChange={e => setEmail(e.target.value)}
+						onFocus={() => setErrorText("")}
+					/>
+				</div>
+				<div className="form-group">
+					<FontAwesomeIcon icon="lock" />
 
-        <div>{this.state.errorText}</div>
+					<input
+						type="password"
+						name="password"
+						placeholder="Your password"
+						value={password}
+						onChange={e => setPassword(e.target.value)}
+						onFocus={() => setErrorText("")}
+					/>
+				</div>
 
-        <form onSubmit={this.handleSubmit} className="auth-form-wrapper">
-        <div className="form-group">
-        <FontAwesomeIcon icon="envelope" />
-          <input
-            type="email"
-            name="email"
-            placeholder="Your email"
-            value={this.state.email}
-            onChange={this.handleChange}
-          />
-          </div>
-          <div className="form-group">
-          <FontAwesomeIcon icon="lock" />
-          <input
-            type="password"
-            name="password"
-            placeholder="Your password"
-            value={this.state.password}
-            onChange={this.handleChange}
-          />
-          </div>
-
-            <button type="submit" className="btn">Login</button>
-        </form>
-      </div>
-    );
-  }
+				<button type="submit" className="btn">Login</button>
+			</form>
+		</div>
+	);
 }
