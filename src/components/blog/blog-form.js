@@ -1,201 +1,176 @@
-import React, { Component } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import DropzoneComponent from "react-dropzone-component";
 
 import RichTextEditor from "../forms/rich-text-editor";
 
-export default class BlogForm extends Component {
-  constructor(props) {
-    super(props);
+export default function BlogForm(props) {
+	const featuredImageRef = useRef()
 
-    this.state = {
-      id: "",
-      title: "",
-      blog_status: "",
-      content: "",
-      featured_image: "",
-      apiUrl: "https://semperry.devcamp.space/portfolio/portfolio_blogs",
-      apiAction: "post"
-    };
+	const [id, setId] = useState("")
+	const [title, setTitle] = useState("")
+	const [blog_status, setBlogStatus] = useState("")
+	const [content, setContent] = useState("")
+	const [featured_image, setFeaturedImage] = useState("")
+	const [apiUrl, setApiUrl] = useState("https://semperry.devcamp.space/portfolio/portfolio_blogs")
+	const [apiAction, setApiAction] = useState("post")
 
-    this.featuredImageRef = React.createRef();
-  }
+	const deleteImage = imageType => {
+		axios
+			.delete(
+				`https://api.devcamp.space/portfolio/delete-portfolio-blog-image/${
+				props.blog.id
+				}?image_type=${imageType}`,
+				{ withCredentials: true }
+			)
+			.then(response => {
+				props.handleFeaturedImageDelete();
+			})
+			.catch(error => {
+				console.log("deleteImage", error);
+			});
+	};
 
-  deleteImage = imageType => {
-    axios
-      .delete(
-        `https://api.devcamp.space/portfolio/delete-portfolio-blog-image/${
-          this.props.blog.id
-        }?image_type=${imageType}`,
-        { withCredentials: true }
-      )
-      .then(response => {
-        this.props.handleFeaturedImageDelete();
-      })
-      .catch(error => {
-        console.log("deleteImage", error);
-      });
-  };
+	const handleFeaturedImageDrop = () => {
+		return {
+			addedfile: file => setFeaturedImage(file)
+		};
+	};
 
-  handleFeaturedImageDrop = () => {
-    return {
-      addedfile: file => this.setState({ featured_image: file })
-    };
-  };
+	const djsConfig = () => {
+		return {
+			addRemoveLinks: true,
+			maxFiles: 1
+		};
+	};
 
-  djsConfig = () => {
-    return {
-      addRemoveLinks: true,
-      maxFiles: 1
-    };
-  };
+	useEffect(() => {
+		if (props.editMode) {
+			setId(props.blog.id)
+			setTitle(props.blog.title)
+			setBlogStatus(props.blog.blog_status)
+			setContent(props.blog.content)
+			setApiUrl(`https://semperry.devcamp.space/portfolio/portfolio_blogs/${
+				props.blog.id
+				}`)
+			setApiAction("patch")
+		}
+	}, [])
 
-  componentWillMount() {
-    if (this.props.editMode) {
-      this.setState({
-        id: this.props.blog.id,
-        title: this.props.blog.title,
-        blog_status: this.props.blog.blog_status,
-        content: this.props.blog.content,
-        apiUrl: `https://semperry.devcamp.space/portfolio/portfolio_blogs/${
-          this.props.blog.id
-        }`,
-        apiAction: "patch"
-      });
-    }
-  }
+	const componentConfig = () => {
+		return {
+			iconFiletypes: [".jpg", ".png"],
+			showFiletypeIcon: true,
+			postUrl: "https://httpbin.org/post"
+		};
+	};
 
-  componentConfig = () => {
-    return {
-      iconFiletypes: [".jpg", ".png"],
-      showFiletypeIcon: true,
-      postUrl: "https://httpbin.org/post"
-    };
-  };
+	const buildForm = () => {
+		let formData = new FormData();
 
-  handleRichTextEditorChange = content => {
-    this.setState({ content });
-  };
+		formData.append("portfolio_blog[title]", title);
+		formData.append("portfolio_blog[blog_status]", blog_status);
+		formData.append("portfolio_blog[content]", content);
 
-  buildForm = () => {
-    let formData = new FormData();
+		if (featured_image) {
+			formData.append(
+				"portfolio_blog[featured_image]",
+				featured_image
+			);
+		}
 
-    formData.append("portfolio_blog[title]", this.state.title);
-    formData.append("portfolio_blog[blog_status]", this.state.blog_status);
-    formData.append("portfolio_blog[content]", this.state.content);
+		return formData;
+	};
 
-    if (this.state.featured_image) {
-      formData.append(
-        "portfolio_blog[featured_image]",
-        this.state.featured_image
-      );
-    }
+	const handleSubmit = event => {
+		axios({
+			method: apiAction,
+			url: apiUrl,
+			data: buildForm(),
+			withCredentials: true
+		})
+			.then(response => {
+				if (featured_image) {
+					featuredImageRef.current.dropzone.removeAllFiles();
+				}
+				setTitle("")
+				setBlogStatus("")
+				setContent("")
+				setFeaturedImage("")
 
-    return formData;
-  };
+				if (props.editMode) {
+					props.handleUpdateFormSubmission(response.data.portfolio_blog)
+				} else {
+					props.handleSuccessfulFormSubmission(
+						response.data.portfolio_blog
+					);
+				}
+			})
+			.catch(error => {
+				console.log("handleSubmit Error", error);
+			});
 
-  handleSubmit = event => {
-    axios({
-      method: this.state.apiAction,
-      url: this.state.apiUrl,
-      data: this.buildForm(),
-      withCredentials: true
-    })
-      .then(response => {
-        if (this.state.featured_image) {
-          this.featuredImageRef.current.dropzone.removeAllFiles();
-        }
-        this.setState({
-          title: "",
-          blog_status: "",
-          content: "",
-          featured_image: ""
-        });
+		event.preventDefault();
+	};
 
-        if(this.props.editMode) {
-          //Update blog detail
-          this.props.handleUpdateFormSubmission(response.data.portfolio_blog)
-        } else {
-        this.props.handleSuccessfulFormSubmission(
-          response.data.portfolio_blog
-        );
-        }
-      })
-      .catch(error => {
-        console.log("handleSubmit Error", error);
-      });
+	return (
+		<form onSubmit={handleSubmit} className="blog-form-wrapper">
+			<div className="two-column">
+				<input
+					type="text"
+					onChange={e => setTitle(e.target.value)}
+					placeholder="Blog Title"
+					value={title}
+				/>
 
-    event.preventDefault();
-  };
+				<input
+					type="text"
+					onChange={e => setBlogStatus(e.target.value)}
+					placeholder="Blog Status"
+					value={blog_status}
+				/>
+			</div>
 
-  handleChange = event => {
-    this.setState({
-      [event.target.name]: event.target.value
-    });
-  };
+			<div className="one-column">
+				<RichTextEditor
+					handleRichTextEditorChange={content => setContent(content)}
+					editMode={props.editMode}
+					contentToEdit={
+						props.editMode && props.blog.content
+							? props.blog.content
+							: null
+					}
+				/>
+			</div>
 
-  render() {
-    return (
-      <form onSubmit={this.handleSubmit} className="blog-form-wrapper">
-        <div className="two-column">
-          <input
-            type="text"
-            onChange={this.handleChange}
-            name="title"
-            placeholder="Blog Title"
-            value={this.state.title}
-          />
+			<div className="image-uploaders">
+				{props.editMode && props.blog.featured_image_url ? (
+					<div className="portfolio-manager-image-wrapper">
+						<img src={props.blog.featured_image_url} />
 
-          <input
-            type="text"
-            onChange={this.handleChange}
-            name="blog_status"
-            placeholder="Blog Status"
-            value={this.state.blog_status}
-          />
-        </div>
-
-        <div className="one-column">
-          <RichTextEditor
-            handleRichTextEditorChange={this.handleRichTextEditorChange}
-            editMode={this.props.editMode}
-            contentToEdit={
-              this.props.editMode && this.props.blog.content
-                ? this.props.blog.content
-                : null
-            }
-          />
-        </div>
-
-        <div className="image-uploaders">
-          {this.props.editMode && this.props.blog.featured_image_url ? (
-            <div className="portfolio-manager-image-wrapper">
-              <img src={this.props.blog.featured_image_url} />
-
-              <div className="image-removal-link">
-                <a
-                  onClick={() => {
-                    this.deleteImage("featured_image");
-                  }}
-                >
-                  Remove file
+						<div className="image-removal-link">
+							<a
+								onClick={() => {
+									deleteImage("featured_image");
+								}}
+							>
+								Remove file
                 </a>
-              </div>
-            </div>
-          ) : (
-            <DropzoneComponent
-              ref={this.featuredImageRef}
-              config={this.componentConfig()}
-              djsConfig={this.djsConfig()}
-              eventHandlers={this.handleFeaturedImageDrop()}
-            >
-              <div className="dz-message">Featured Image</div>
-            </DropzoneComponent>
-          )}
-        </div>
+						</div>
+					</div>
+				) : (
+						<DropzoneComponent
+							ref={featuredImageRef}
+							config={componentConfig()}
+							djsConfig={djsConfig()}
+							eventHandlers={handleFeaturedImageDrop()}
+						>
+							<div className="dz-message">Featured Image</div>
+						</DropzoneComponent>
+					)}
+			</div>
 
-        <button className="btn">Save</button>
-      </form>
-    );
-  }
+			<button className="btn">Save</button>
+		</form>
+	);
 }
