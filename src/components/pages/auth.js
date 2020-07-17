@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useContext } from "react";
+
 import Login from "../auth/login"
 import loginImg from "../../../static/assets/images/auth/login.jpg";
+import { AuthContext } from "../../bootstrap";
 
 export default function Auth(props) {
-
+	const { loggedInStatus, setLoggedInStatus } = useContext(AuthContext)
 	const handleSuccessfulAuth = () => {
-		props.handleSuccessfulLogin();
+		setLoggedInStatus("LOGGED_IN")
 		props.history.push("/");
 	}
 
 	const handleUnuccessfulAuth = () => {
-		props.handleUnsuccessfulLogin();
+		setLoggedInStatus("NOT_LOGGED_IN")
 	}
 
 	return (

@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import ReactHtmlParser from "react-html-parser";
 
 import BlogForm from "../blog/blog-form";
 
 import BlogFeaturedImage from "../blog/blog-featured-image";
+import { AuthContext } from "../../bootstrap";
 
 export default function BlogDetail(props) {
+	const { loggedInStatus } = useContext(AuthContext)
+
 	const [currentId, setCurrentId] = useState(props.match.params.slug)
 	const [blogItem, setBlogItem] = useState({})
 	const [editMode, setEditMode] = useState(false)
@@ -23,7 +26,7 @@ export default function BlogDetail(props) {
 	};
 
 	const handleEditClick = () => {
-		if (props.loggedInStatus === "LOGGED_IN") {
+		if (loggedInStatus === "LOGGED_IN") {
 			setEditMode(true)
 		}
 	};

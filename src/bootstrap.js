@@ -1,16 +1,22 @@
-import React from "react";
+import React, { createContext, useState } from "react";
 import ReactDOM from "react-dom";
-import { BrowserRouter } from "react-router-dom";
-import App from "./components/app";
 
+import App from "./components/app";
 import "./style/main.scss";
 
-function main() {
-	ReactDOM.render(
-		<BrowserRouter>
+export const AuthContext = createContext()
+
+function Main() {
+	const [loggedInStatus, setLoggedInStatus] = useState("NOT_LOGGED_IN")
+
+	return (
+		<AuthContext.Provider value={{ loggedInStatus, setLoggedInStatus }}>
 			<App />
-		</BrowserRouter>, document.querySelector(".app-wrapper")
-	);
+		</AuthContext.Provider>
+	)
 }
 
-document.addEventListener("DOMContentLoaded", main);
+document.addEventListener("DOMContentLoaded", () => {
+	ReactDOM.render(<Main />, document.querySelector(".app-wrapper"));
+})
+

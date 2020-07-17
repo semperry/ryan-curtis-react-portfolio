@@ -1,11 +1,10 @@
-// TODO:
-// Context for logged in status
-import React, { useState, useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Icons from "../helpers/icons";
 
+import { AuthContext } from "../bootstrap";
+import Icons from "../helpers/icons";
 import NavigationContainer from "./navigation/navigation-container";
 import Home from "./pages/home";
 import About from "./pages/about";
@@ -20,19 +19,7 @@ import NoMatch from "./pages/no-match";
 Icons();
 
 export default function App() {
-	const [loggedInStatus, setLoggedInStatus] = useState("NOT_LOGGED_IN")
-
-	const handleSuccessfulLogin = () => {
-		setLoggedInStatus("LOGGED_IN")
-	};
-
-	const handleUnsuccessfulLogin = () => {
-		setLoggedInStatus("NOT_LOGGED_IN")
-	};
-
-	const handleSuccessfulLogout = () => {
-		setLoggedInStatus("NOT_LOGGED_IN")
-	};
+	const { loggedInStatus, setLoggedInStatus } = useContext(AuthContext)
 
 	const checkLoginStatus = () => {
 		return axios
@@ -45,9 +32,9 @@ export default function App() {
 				if (loggedIn && loggedInStatus === "LOGGED_IN") {
 					return loggedIn;
 				} else if (loggedIn && loggedInStatus === "NOT_LOGGED_IN") {
-					handleSuccessfulLogin()
+					setLoggedInStatus("LOGGED_IN")
 				} else if (!loggedIn && loggedInStatus == "LOGGED_IN") {
-					handleUnsuccessfulLogin()
+					setLoggedInStatus("NOT_LOGGED_IN")
 				}
 			})
 			.catch(error => {
@@ -72,53 +59,19 @@ export default function App() {
 		<div className="container">
 			<Router>
 				<div>
-					<NavigationContainer
-						loggedInStatus={loggedInStatus}
-						handleSuccessfulLogout={handleSuccessfulLogout}
-					/>
+					<NavigationContainer />
 
 					<Switch>
 						<Route exact path="/" component={Home} />
-
-						<Route
-							path="/auth"
-							render={props => (
-								<Auth
-									{...props}
-									handleSuccessfulLogin={handleSuccessfulLogin}
-									handleUnsuccessfulLogin={handleUnsuccessfulLogin}
-								/>
-							)}
-						/>
-
+						<Route path="/auth" component={Auth} />
 						<Route path="/about-me" component={About} />
 						<Route path="/contact" component={Contact} />
+						<Route path="/blog" component={Blog} />
+						<Route path="/b/:slug" component={BlogDetail} />
 
-						<Route
-							path="/blog"
-							render={props => (
-								<Blog {...props} loggedInStatus={loggedInStatus} />
-							)}
-						/>
+						{loggedInStatus === "LOGGED_IN" ? authorizedPages() : null}
 
-						<Route
-							path="/b/:slug"
-							render={props => (
-								<BlogDetail
-									{...props}
-									loggedInStatus={loggedInStatus}
-								/>
-							)}
-						/>
-
-						{loggedInStatus === "LOGGED_IN"
-							? authorizedPages()
-							: null}
-						<Route
-							exact
-							path="/portfolio/:slug"
-							component={PortfolioDetail}
-						/>
+						<Route exact path="/portfolio/:slug" component={PortfolioDetail} />
 						<Route component={NoMatch} />
 					</Switch>
 				</div>

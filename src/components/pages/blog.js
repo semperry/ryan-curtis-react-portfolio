@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
 import BlogItem from "../blog/blog-item";
 import BlogModal from "../modals/blog-modal";
+import { AuthContext } from "../../bootstrap";
 
 function Blog(props) {
+	const { loggedInStatus } = useContext(AuthContext)
+
 	const [blogItems, setBlogItems] = useState([])
 	const [totalCount, setTotalCount] = useState(0)
 	const [currentPage, setCurrentPage] = useState(0)
@@ -87,7 +90,7 @@ function Blog(props) {
 	}, [])
 
 	const blogRecords = blogItems.map(blogItem => {
-		if (props.loggedInStatus === "LOGGED_IN") {
+		if (loggedInStatus === "LOGGED_IN") {
 			return (
 				<div key={blogItem.id} className="admin-blog-wrapper">
 					<BlogItem blogItem={blogItem} />
@@ -109,7 +112,7 @@ function Blog(props) {
 				modalIsOpen={blogModalIsOpen}
 			/>
 
-			{props.loggedInStatus === "LOGGED_IN" ? (
+			{loggedInStatus === "LOGGED_IN" ? (
 				<div className="new-blog-link">
 					<a onClick={handleNewBlogClick}>
 						<FontAwesomeIcon icon="plus-circle" />
